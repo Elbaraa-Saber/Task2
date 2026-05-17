@@ -13,15 +13,17 @@ public abstract class Organism
 
     public World World { get; }
 
-    public Point2 Pos { get; set; }
+    public Point2 Pos { get; internal set; }
 
-    public bool IsAlive { get; set; } = true;
+    public bool IsAlive { get; private set; } = true;
 
     public int Age { get; private set; }
 
     public abstract char Glyph { get; }
 
     public virtual ConsoleColor? Color => null;
+
+    public Gender Gender { get; }
 
     public void ApplyColor()
     {
@@ -31,9 +33,12 @@ public abstract class Organism
         }
     }
 
-    public Gender Gender { get; }
-
     public virtual void Tick() => Age++;
+
+    internal void MarkDead()
+    {
+        IsAlive = false;
+    }
 
     private static Gender PickGender() => Rand.Chance(0.5) ? Gender.Female : Gender.Male;
 }

@@ -41,7 +41,7 @@ public class World
             return;
         }
 
-        org.IsAlive = false;
+        org.MarkDead();
         _grid.Remove(org.Pos);
     }
 
