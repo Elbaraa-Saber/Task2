@@ -25,14 +25,6 @@ public abstract class Organism
 
     public Gender Gender { get; }
 
-    public void ApplyColor()
-    {
-        if (Color.HasValue)
-        {
-            Console.ForegroundColor = Color.Value;
-        }
-    }
-
     public virtual void Tick() => Age++;
 
     internal void MarkDead()

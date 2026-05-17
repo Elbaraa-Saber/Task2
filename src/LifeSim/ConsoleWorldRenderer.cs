@@ -23,7 +23,7 @@ public sealed class ConsoleWorldRenderer
             {
                 if (snapshot.TryGetValue(new Point2(x, y), out var organism))
                 {
-                    organism.ApplyColor();
+                    ApplyColor(organism);
                     Console.Write(organism.Glyph);
                     Console.ResetColor();
                 }
@@ -34,6 +34,14 @@ public sealed class ConsoleWorldRenderer
             }
 
             Console.WriteLine();
+        }
+    }
+
+    private static void ApplyColor(Organism organism)
+    {
+        if (organism.Color.HasValue)
+        {
+            Console.ForegroundColor = organism.Color.Value;
         }
     }
 }
