@@ -11,19 +11,19 @@ public abstract class Animal : Organism
     {
     }
 
-    protected abstract int Vision { get; }
+    protected abstract int VisionRange { get; }
 
-    protected abstract int MoveCost { get; }
+    protected abstract int MovementEnergyCost { get; }
 
-    protected abstract int BiteGain { get; }
+    protected abstract int FoodEnergyGain { get; }
 
-    protected abstract int ReproduceThreshold { get; }
+    protected abstract int ReproductionEnergyThreshold { get; }
 
     protected abstract int InitialEnergy { get; }
 
-    protected abstract char SelfGlyph { get; }
+    protected abstract char AnimalGlyph { get; }
 
-    public override char Glyph => SelfGlyph;
+    public override char Glyph => AnimalGlyph;
 
     public override ConsoleColor? Color => ConsoleColor.White;
 
@@ -44,7 +44,7 @@ public abstract class Animal : Organism
 
     protected abstract Organism? FindPrey();
 
-    protected abstract Animal MakeChild(Point2 p);
+    protected abstract Animal MakeChild(Point2 position);
 
     protected static bool AreNeighborsOrSame(Point2 a, Point2 b) =>
         Math.Abs(a.X - b.X) <= 1 && Math.Abs(a.Y - b.Y) <= 1;
@@ -116,29 +116,29 @@ public abstract class Animal : Organism
         if (AreNeighborsOrSame(Pos, prey.Pos) && prey.IsAlive)
         {
             World.Remove(prey);
-            Energy += BiteGain;
+            Energy += FoodEnergyGain;
         }
     }
 
     private void ConsumeMovementEnergy()
     {
-        Energy -= MoveCost;
+        Energy -= MovementEnergyCost;
     }
 
     private void ReproduceIfEnergyIsEnough()
     {
-        if (Energy < ReproduceThreshold)
+        if (Energy < ReproductionEnergyThreshold)
         {
             return;
         }
 
-        var empty = World.EmptyNeighbors8(Pos).ToList();
-        if (empty.Count == 0)
+        var emptyNeighborPositions = World.EmptyNeighbors8(Pos).ToList();
+        if (emptyNeighborPositions.Count == 0)
         {
             return;
         }
 
-        var child = MakeChild(empty.Pick()!);
+        var child = MakeChild(emptyNeighborPositions.Pick()!);
         Energy /= 2;
         World.Add(child);
     }
