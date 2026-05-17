@@ -35,43 +35,11 @@ public abstract class Animal : Organism
     {
         base.Tick();
 
-        if (Age == 1 && Energy == 0)
-        {
-            Energy = InitialEnergy;
-        }
-
-        var prey = FindPrey();
-        if (prey != null)
-        {
-            StepToward(prey.Pos);
-            if (AreNeighborsOrSame(Pos, prey.Pos) && prey.IsAlive)
-            {
-                World.Remove(prey);
-                Energy += BiteGain;
-            }
-        }
-        else
-        {
-            Wander();
-        }
-
-        Energy -= MoveCost;
-
-        if (Energy >= ReproduceThreshold)
-        {
-            var empty = World.EmptyNeighbors8(Pos).ToList();
-            if (empty.Count > 0)
-            {
-                var child = MakeChild(empty.Pick()!);
-                Energy /= 2;
-                World.Add(child);
-            }
-        }
-
-        if (Energy <= 0 || (Age > MaxAge && Rand.Chance(0.02)))
-        {
-            World.Remove(this);
-        }
+        InitializeEnergyOnFirstTick();
+        MoveAndEatOrWander();
+        ConsumeMovementEnergy();
+        ReproduceIfEnergyIsEnough();
+        DieIfNeeded();
     }
 
     protected abstract Organism? FindPrey();
@@ -118,6 +86,68 @@ public abstract class Animal : Organism
         if (options.Count > 0)
         {
             World.MoveTo(this, options.Pick()!);
+        }
+    }
+
+    private void InitializeEnergyOnFirstTick()
+    {
+        if (Age == 1 && Energy == 0)
+        {
+            Energy = InitialEnergy;
+        }
+    }
+
+    private void MoveAndEatOrWander()
+    {
+        var prey = FindPrey();
+        if (prey != null)
+        {
+            MoveTowardPreyAndEatIfPossible(prey);
+            return;
+        }
+
+        Wander();
+    }
+
+    private void MoveTowardPreyAndEatIfPossible(Organism prey)
+    {
+        StepToward(prey.Pos);
+
+        if (AreNeighborsOrSame(Pos, prey.Pos) && prey.IsAlive)
+        {
+            World.Remove(prey);
+            Energy += BiteGain;
+        }
+    }
+
+    private void ConsumeMovementEnergy()
+    {
+        Energy -= MoveCost;
+    }
+
+    private void ReproduceIfEnergyIsEnough()
+    {
+        if (Energy < ReproduceThreshold)
+        {
+            return;
+        }
+
+        var empty = World.EmptyNeighbors8(Pos).ToList();
+        if (empty.Count == 0)
+        {
+            return;
+        }
+
+        var child = MakeChild(empty.Pick()!);
+        Energy /= 2;
+        World.Add(child);
+    }
+
+    private void DieIfNeeded()
+    {
+        if (Energy <= 0 || (Age > MaxAge && Rand.Chance(0.02)))
+        {
+            World.Remove(this);
         }
     }
 
