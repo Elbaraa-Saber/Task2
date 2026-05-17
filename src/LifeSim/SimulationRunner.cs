@@ -45,9 +45,9 @@ public sealed class SimulationRunner
         var initialPlants = (int)(Width * Height * 0.22);
 
         var world = new World(Width, Height);
-        world.Seed<Plant>(initialPlants);
-        world.Seed<Herbivore>(InitialHerbivores);
-        world.Seed<Predator>(InitialPredators);
+        world.Seed(initialPlants, position => new Plant(world, position));
+        world.Seed(InitialHerbivores, position => new Herbivore(world, position));
+        world.Seed(InitialPredators, position => new Predator(world, position));
 
         return world;
     }

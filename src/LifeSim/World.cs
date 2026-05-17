@@ -115,23 +115,20 @@ public class World
     public void Seed<T>(int count)
         where T : Organism
     {
+        Seed(count, CreateOrganism<T>);
+    }
+
+    public void Seed(int count, Func<Point2, Organism> createOrganism)
+    {
         for (var i = 0; i < count; i++)
         {
-            var p = RandomEmptyCell();
-            if (p == null)
+            var position = RandomEmptyCell();
+            if (position == null)
             {
                 break;
             }
 
-            Organism organism = typeof(T).Name switch
-            {
-                nameof(Plant) => new Plant(this, p.Value),
-                nameof(Herbivore) => new Herbivore(this, p.Value),
-                nameof(Predator) => new Predator(this, p.Value),
-                _ => throw new NotSupportedException($"Unknown organism type: {typeof(T).Name}"),
-            };
-
-            Add(organism);
+            Add(createOrganism(position.Value));
         }
     }
 
@@ -193,6 +190,30 @@ public class World
     }
 
     public IReadOnlyDictionary<Point2, Organism> GridSnapshot() => new Dictionary<Point2, Organism>(_grid);
+
+    private Organism CreateOrganism<T>(Point2 position)
+        where T : Organism
+    {
+        var organismType = typeof(T);
+
+        var constructorWithGender = organismType.GetConstructor(
+            new[] { typeof(World), typeof(Point2), typeof(Gender?) });
+
+        if (constructorWithGender != null)
+        {
+            return (Organism)constructorWithGender.Invoke(new object?[] { this, position, null });
+        }
+
+        var constructor = organismType.GetConstructor(
+            new[] { typeof(World), typeof(Point2) });
+
+        if (constructor != null)
+        {
+            return (Organism)constructor.Invoke(new object[] { this, position });
+        }
+
+        throw new NotSupportedException($"Cannot create organism type: {organismType.Name}");
+    }
 
     private static int ToroidalDistance(int a, int b, int size)
     {
