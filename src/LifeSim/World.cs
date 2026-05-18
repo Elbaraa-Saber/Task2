@@ -134,29 +134,45 @@ public class World
 
     public Point2? RandomEmptyCell()
     {
-        for (var i = 0; i < 500; i++)
+        return TryFindRandomEmptyCellByAttempts() ?? PickEmptyCellByFullScan();
+    }
+
+    private Point2? TryFindRandomEmptyCellByAttempts()
+    {
+        const int maxAttempts = 500;
+
+        for (var i = 0; i < maxAttempts; i++)
         {
-            var p = new Point2(RandomProvider.Next(0, Width), RandomProvider.Next(0, Height));
-            if (IsEmpty(p))
+            var position = new Point2(RandomProvider.Next(0, Width), RandomProvider.Next(0, Height));
+            if (IsEmpty(position))
             {
-                return p;
+                return position;
             }
         }
 
-        var empties = new List<Point2>();
+        return null;
+    }
+
+    private Point2? PickEmptyCellByFullScan()
+    {
+        var emptyCells = FindEmptyCells().ToList();
+
+        return emptyCells.Count == 0 ? null : emptyCells.Pick();
+    }
+
+    private IEnumerable<Point2> FindEmptyCells()
+    {
         for (var y = 0; y < Height; y++)
         {
             for (var x = 0; x < Width; x++)
             {
-                var p = new Point2(x, y);
-                if (IsEmpty(p))
+                var position = new Point2(x, y);
+                if (IsEmpty(position))
                 {
-                    empties.Add(p);
+                    yield return position;
                 }
             }
         }
-
-        return empties.Count == 0 ? null : empties.Pick();
     }
 
     public Organism? FindNearest<T>(Point2 from, int visionRange)
