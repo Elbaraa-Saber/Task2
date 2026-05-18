@@ -51,33 +51,43 @@ public abstract class Animal : Organism
 
     protected void StepToward(Point2 target)
     {
-        var dx = BestToroidalStep(Pos.X, target.X, World.Width);
-        var dy = BestToroidalStep(Pos.Y, target.Y, World.Height);
+        var freeCandidates = GetStepTowardCandidates(target)
+            .Where(World.IsEmpty)
+            .ToList();
 
-        var candidates = new List<Point2>();
-        if (dx != 0)
+        MoveToRandomCandidateOrWander(freeCandidates);
+    }
+
+    private IEnumerable<Point2> GetStepTowardCandidates(Point2 target)
+    {
+        var horizontalStep = BestToroidalStep(Pos.X, target.X, World.Width);
+        var verticalStep = BestToroidalStep(Pos.Y, target.Y, World.Height);
+
+        if (horizontalStep != 0)
         {
-            candidates.Add(World.Wrap(new Point2(Pos.X + dx, Pos.Y)));
+            yield return World.Wrap(new Point2(Pos.X + horizontalStep, Pos.Y));
         }
 
-        if (dy != 0)
+        if (verticalStep != 0)
         {
-            candidates.Add(World.Wrap(new Point2(Pos.X, Pos.Y + dy)));
+            yield return World.Wrap(new Point2(Pos.X, Pos.Y + verticalStep));
         }
 
-        if (dx != 0 && dy != 0)
+        if (horizontalStep != 0 && verticalStep != 0)
         {
-            candidates.Add(World.Wrap(new Point2(Pos.X + dx, Pos.Y + dy)));
+            yield return World.Wrap(new Point2(Pos.X + horizontalStep, Pos.Y + verticalStep));
         }
+    }
 
-        var free = candidates.Where(World.IsEmpty).ToList();
-        if (free.Count == 0)
+    private void MoveToRandomCandidateOrWander(IList<Point2> candidates)
+    {
+        if (candidates.Count == 0)
         {
             Wander();
             return;
         }
 
-        World.MoveTo(this, free.Pick()!);
+        World.MoveTo(this, candidates.Pick()!);
     }
 
     protected void Wander()
