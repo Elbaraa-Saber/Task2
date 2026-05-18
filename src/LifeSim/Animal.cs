@@ -11,19 +11,19 @@ public abstract class Animal : Organism
     {
     }
 
-    protected abstract int Vision { get; }
+    protected abstract int VisionRange { get; }
 
-    protected abstract int MoveCost { get; }
+    protected abstract int MovementEnergyCost { get; }
 
-    protected abstract int BiteGain { get; }
+    protected abstract int FoodEnergyGain { get; }
 
-    protected abstract int ReproduceThreshold { get; }
+    protected abstract int ReproductionEnergyThreshold { get; }
 
     protected abstract int InitialEnergy { get; }
 
-    protected abstract char SelfGlyph { get; }
+    protected abstract char AnimalGlyph { get; }
 
-    public override char Glyph => SelfGlyph;
+    public override char Glyph => AnimalGlyph;
 
     public override ConsoleColor? Color => ConsoleColor.White;
 
@@ -35,81 +35,59 @@ public abstract class Animal : Organism
     {
         base.Tick();
 
-        if (Age == 1 && Energy == 0)
-        {
-            Energy = InitialEnergy;
-        }
-
-        var prey = FindPrey();
-        if (prey != null)
-        {
-            StepToward(prey.Pos);
-            if (AreNeighborsOrSame(Pos, prey.Pos) && prey.IsAlive)
-            {
-                World.Remove(prey);
-                Energy += BiteGain;
-            }
-        }
-        else
-        {
-            Wander();
-        }
-
-        Energy -= MoveCost;
-
-        if (Energy >= ReproduceThreshold)
-        {
-            var empty = World.EmptyNeighbors8(Pos).ToList();
-            if (empty.Count > 0)
-            {
-                var child = MakeChild(empty.Pick()!);
-                Energy /= 2;
-                World.Add(child);
-            }
-        }
-
-        if (Energy <= 0 || (Age > MaxAge && Rand.Chance(0.02)))
-        {
-            World.Remove(this);
-        }
+        InitializeEnergyOnFirstTick();
+        MoveAndEatOrWander();
+        ConsumeMovementEnergy();
+        ReproduceIfEnergyIsEnough();
+        DieIfNeeded();
     }
 
     protected abstract Organism? FindPrey();
 
-    protected abstract Animal MakeChild(Point2 p);
+    protected abstract Animal MakeChild(Point2 position);
 
     protected static bool AreNeighborsOrSame(Point2 a, Point2 b) =>
         Math.Abs(a.X - b.X) <= 1 && Math.Abs(a.Y - b.Y) <= 1;
 
     protected void StepToward(Point2 target)
     {
-        var dx = BestToroidalStep(Pos.X, target.X, World.Width);
-        var dy = BestToroidalStep(Pos.Y, target.Y, World.Height);
+        var freeCandidates = GetStepTowardCandidates(target)
+            .Where(World.IsEmpty)
+            .ToList();
 
-        var candidates = new List<Point2>();
-        if (dx != 0)
+        MoveToRandomCandidateOrWander(freeCandidates);
+    }
+
+    private IEnumerable<Point2> GetStepTowardCandidates(Point2 target)
+    {
+        var horizontalStep = BestToroidalStep(Pos.X, target.X, World.Width);
+        var verticalStep = BestToroidalStep(Pos.Y, target.Y, World.Height);
+
+        if (horizontalStep != 0)
         {
-            candidates.Add(World.Wrap(new Point2(Pos.X + dx, Pos.Y)));
+            yield return World.Wrap(new Point2(Pos.X + horizontalStep, Pos.Y));
         }
 
-        if (dy != 0)
+        if (verticalStep != 0)
         {
-            candidates.Add(World.Wrap(new Point2(Pos.X, Pos.Y + dy)));
+            yield return World.Wrap(new Point2(Pos.X, Pos.Y + verticalStep));
         }
 
-        if (dx != 0 && dy != 0)
+        if (horizontalStep != 0 && verticalStep != 0)
         {
-            candidates.Add(World.Wrap(new Point2(Pos.X + dx, Pos.Y + dy)));
+            yield return World.Wrap(new Point2(Pos.X + horizontalStep, Pos.Y + verticalStep));
         }
+    }
 
-        var free = candidates.Where(World.IsEmpty).ToList();
-        if (free.Count == 0)
+    private void MoveToRandomCandidateOrWander(IList<Point2> candidates)
+    {
+        if (candidates.Count == 0)
         {
             Wander();
             return;
         }
 
-        World.MoveTo(this, free.Pick()!);
+        World.MoveTo(this, candidates.Pick()!);
     }
 
     protected void Wander()
@@ -118,6 +96,68 @@ public abstract class Animal : Organism
         if (options.Count > 0)
         {
             World.MoveTo(this, options.Pick()!);
+        }
+    }
+
+    private void InitializeEnergyOnFirstTick()
+    {
+        if (Age == 1 && Energy == 0)
+        {
+            Energy = InitialEnergy;
+        }
+    }
+
+    private void MoveAndEatOrWander()
+    {
+        var prey = FindPrey();
+        if (prey != null)
+        {
+            MoveTowardPreyAndEatIfPossible(prey);
+            return;
+        }
+
+        Wander();
+    }
+
+    private void MoveTowardPreyAndEatIfPossible(Organism prey)
+    {
+        StepToward(prey.Pos);
+
+        if (AreNeighborsOrSame(Pos, prey.Pos) && prey.IsAlive)
+        {
+            World.Remove(prey);
+            Energy += FoodEnergyGain;
+        }
+    }
+
+    private void ConsumeMovementEnergy()
+    {
+        Energy -= MovementEnergyCost;
+    }
+
+    private void ReproduceIfEnergyIsEnough()
+    {
+        if (Energy < ReproductionEnergyThreshold)
+        {
+            return;
+        }
+
+        var emptyNeighborPositions = World.EmptyNeighbors8(Pos).ToList();
+        if (emptyNeighborPositions.Count == 0)
+        {
+            return;
+        }
+
+        var child = MakeChild(emptyNeighborPositions.Pick()!);
+        Energy /= 2;
+        World.Add(child);
+    }
+
+    private void DieIfNeeded()
+    {
+        if (Energy <= 0 || (Age > MaxAge && RandomProvider.Chance(0.02)))
+        {
+            World.Remove(this);
         }
     }
 
