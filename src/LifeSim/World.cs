@@ -75,7 +75,7 @@ public class World
     public void Step()
     {
         Tick++;
-        var snapshot = All.OrderBy(_ => Rand.Next(0, int.MaxValue)).ToList();
+        var snapshot = All.OrderBy(_ => RandomProvider.Next(0, int.MaxValue)).ToList();
         foreach (var o in snapshot)
         {
             if (o.IsAlive)
@@ -136,7 +136,7 @@ public class World
     {
         for (var i = 0; i < 500; i++)
         {
-            var p = new Point2(Rand.Next(0, Width), Rand.Next(0, Height));
+            var p = new Point2(RandomProvider.Next(0, Width), RandomProvider.Next(0, Height));
             if (IsEmpty(p))
             {
                 return p;

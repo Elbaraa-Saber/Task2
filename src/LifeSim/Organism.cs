@@ -32,5 +32,5 @@ public abstract class Organism
         IsAlive = false;
     }
 
-    private static Gender PickGender() => Rand.Chance(0.5) ? Gender.Female : Gender.Male;
+    private static Gender PickGender() => RandomProvider.Chance(0.5) ? Gender.Female : Gender.Male;
 }

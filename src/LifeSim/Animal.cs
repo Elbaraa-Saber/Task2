@@ -145,7 +145,7 @@ public abstract class Animal : Organism
 
     private void DieIfNeeded()
     {
-        if (Energy <= 0 || (Age > MaxAge && Rand.Chance(0.02)))
+        if (Energy <= 0 || (Age > MaxAge && RandomProvider.Chance(0.02)))
         {
             World.Remove(this);
         }

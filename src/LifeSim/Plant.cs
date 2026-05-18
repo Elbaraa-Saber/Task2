@@ -21,7 +21,7 @@ public class Plant : Organism
     {
         base.Tick();
 
-        if (Age >= MatureAge && Rand.Chance(SpreadChance))
+        if (Age >= MatureAge && RandomProvider.Chance(SpreadChance))
         {
             var spots = World.EmptyNeighbors8(Pos).ToList();
             if (spots.Count > 0)
@@ -30,7 +30,7 @@ public class Plant : Organism
             }
         }
 
-        if (Age > MaxAge && Rand.Chance(0.01))
+        if (Age > MaxAge && RandomProvider.Chance(0.01))
         {
             World.Remove(this);
         }
