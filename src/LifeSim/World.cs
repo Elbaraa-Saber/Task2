@@ -176,27 +176,39 @@ public class World
     }
 
     public Organism? FindNearest<T>(Point2 from, int visionRange)
-        where T : Organism
+    where T : Organism
     {
-        Organism? best = null;
-        var bestDist = int.MaxValue;
+        Organism? nearestOrganism = null;
+        var nearestDistance = int.MaxValue;
 
-        foreach (var o in All)
+        foreach (var organism in All.OfType<T>())
         {
-            if (o is T)
+            var distance = CalculateToroidalDistance(from, organism.Pos);
+
+            if (IsNearerWithinVision(distance, visionRange, nearestDistance))
             {
-                var dx = ToroidalDistance(from.X, o.Pos.X, Width);
-                var dy = ToroidalDistance(from.Y, o.Pos.Y, Height);
-                var distance = dx + dy;
-                if (distance <= visionRange && distance < bestDist)
-                {
-                    best = o;
-                    bestDist = distance;
-                }
+                nearestOrganism = organism;
+                nearestDistance = distance;
             }
         }
 
-        return best;
+        return nearestOrganism;
+    }
+
+    private int CalculateToroidalDistance(Point2 from, Point2 to)
+    {
+        var horizontalDistance = ToroidalDistance(from.X, to.X, Width);
+        var verticalDistance = ToroidalDistance(from.Y, to.Y, Height);
+
+        return horizontalDistance + verticalDistance;
+    }
+
+    private static bool IsNearerWithinVision(
+        int distance,
+        int visionRange,
+        int nearestDistance)
+    {
+        return distance <= visionRange && distance < nearestDistance;
     }
 
     public string SerializeWorldSnapshot()
